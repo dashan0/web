@@ -13,7 +13,7 @@ $.ajaxPrefilter(function(options) {
         }
     }
 
-    // 全局统一挂载 complete 回调函数
+    // 全局统一挂载 complete 回调函数  不登陆无法打开主页
     options.complete = function(res) {
         // console.log('执行了 complete 回调：')
         // console.log(res)
