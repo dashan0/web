@@ -67,9 +67,9 @@ $(function() {
             data: $(this).serialize(),
             success: res => {
                 if (res.status !== 0) return layer.msg(res.message)
-                console.log('登陆成功');
-                // console.log(res.token);
-                //登陆成功后把token 存储到本地localStorage
+                    // console.log('登陆成功');
+                    // console.log(res.token);
+                    //登陆成功后把token 存储到本地localStorage
                 localStorage.setItem('token', res.token)
                     // 跳转首页
                 location.href = '/index.html'

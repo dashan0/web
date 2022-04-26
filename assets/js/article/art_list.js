@@ -1,154 +1,249 @@
 $(function() {
-  var layer = layui.layer
-  var form = layui.form
-  var laypage = layui.laypage
 
-  // 定义美化时间的过滤器
-  template.defaults.imports.dataFormat = function(date) {
-    const dt = new Date(date)
-
-    var y = dt.getFullYear()
-    var m = padZero(dt.getMonth() + 1)
-    var d = padZero(dt.getDate())
-
-    var hh = padZero(dt.getHours())
-    var mm = padZero(dt.getMinutes())
-    var ss = padZero(dt.getSeconds())
-
-    return y + '-' + m + '-' + d + ' ' + hh + ':' + mm + ':' + ss
-  }
-
-  // 定义补零的函数
-  function padZero(n) {
-    return n > 9 ? n : '0' + n
-  }
-
-  // 定义一个查询的参数对象，将来请求数据的时候，
-  // 需要将请求参数对象提交到服务器
-  var q = {
-    pagenum: 1, // 页码值，默认请求第一页的数据
-    pagesize: 2, // 每页显示几条数据，默认每页显示2条
-    cate_id: '', // 文章分类的 Id
-    state: '' // 文章的发布状态
-  }
-
-  initTable()
-  initCate()
-
-  // 获取文章列表数据的方法
-  function initTable() {
-    $.ajax({
-      method: 'GET',
-      url: '/my/article/list',
-      data: q,
-      success: function(res) {
-        if (res.status !== 0) {
-          return layer.msg('获取文章列表失败！')
+    // 定一个查询的对象
+    let q = {
+            pagenum: 1, //页码值 默认显示第一页
+            pagesize: 2, //每页显示多少条数据 默认2条 
+            cate_id: '', //文章分类的 Id  默认为空
+            state: '', //文章的状态 默认为空
         }
-        // 使用模板引擎渲染页面的数据
-        var htmlStr = template('tpl-table', res)
-        $('tbody').html(htmlStr)
-        // 调用渲染分页的方法
-        renderPage(res.total)
-      }
-    })
-  }
+        //时间过滤器
+    template.defaults.imports.dataFormat = function(data) {
+            let dt = new Date(data)
+            let y = dt.getFullYear()
 
-  // 初始化文章分类的方法
-  function initCate() {
-    $.ajax({
-      method: 'GET',
-      url: '/my/article/cates',
-      success: function(res) {
-        if (res.status !== 0) {
-          return layer.msg('获取分类数据失败！')
+            let m = padZero(dt.getMonth() + 1)
+
+            let d = padZero(dt.getDate())
+
+            let hh = padZero(dt.getHours())
+
+            let mm = padZero(dt.getMinutes())
+
+            let ss = padZero(dt.getSeconds())
+            return y + '-' + m + '-' + d + ' ' + hh + ':' + mm + ':' + ss
+
         }
-        // 调用模板引擎渲染分类的可选项
-        var htmlStr = template('tpl-cate', res)
-        $('[name=cate_id]').html(htmlStr)
-        // 通过 layui 重新渲染表单区域的UI结构
-        form.render()
-      }
-    })
-  }
-
-  // 为筛选表单绑定 submit 事件
-  $('#form-search').on('submit', function(e) {
-    e.preventDefault()
-    // 获取表单中选中项的值
-    var cate_id = $('[name=cate_id]').val()
-    var state = $('[name=state]').val()
-    // 为查询参数对象 q 中对应的属性赋值
-    q.cate_id = cate_id
-    q.state = state
-    // 根据最新的筛选条件，重新渲染表格的数据
+        // 时间补零
+    function padZero(z) {
+        return z > 9 ? z : '0' + z
+    }
     initTable()
-  })
+        // 请求数据
+    function initTable() {
+        $.ajax({
+            method: 'GET',
+            url: '/my/article/list',
+            data: q,
+            success: function(res) {
 
-  // 定义渲染分页的方法
-  function renderPage(total) {
-    // 调用 laypage.render() 方法来渲染分页的结构
-    laypage.render({
-      elem: 'pageBox', // 分页容器的 Id
-      count: total, // 总数据条数
-      limit: q.pagesize, // 每页显示几条数据
-      curr: q.pagenum, // 设置默认被选中的分页
-      layout: ['count', 'limit', 'prev', 'page', 'next', 'skip'],
-      limits: [2, 3, 5, 10],
-      // 分页发生切换的时候，触发 jump 回调
-      // 触发 jump 回调的方式有两种：
-      // 1. 点击页码的时候，会触发 jump 回调
-      // 2. 只要调用了 laypage.render() 方法，就会触发 jump 回调
-      jump: function(obj, first) {
-        // 可以通过 first 的值，来判断是通过哪种方式，触发的 jump 回调
-        // 如果 first 的值为 true，证明是方式2触发的
-        // 否则就是方式1触发的
-        console.log(first)
-        console.log(obj.curr)
-        // 把最新的页码值，赋值到 q 这个查询参数对象中
-        q.pagenum = obj.curr
-        // 把最新的条目数，赋值到 q 这个查询参数对象的 pagesize 属性中
-        q.pagesize = obj.limit
-        // 根据最新的 q 获取对应的数据列表，并渲染表格
-        // initTable()
-        if (!first) {
-          initTable()
-        }
-      }
+                if (res.status !== 0) {
+                    return layui.layer.msg(res.message)
+                }
+                let htmlStr = template('tab-list', res)
+
+                $('tbody').html(htmlStr)
+                    //调用分页函数
+                renderPage(res.total)
+            }
+        })
+    }
+    initCate()
+        // 获取分类列表
+    function initCate() {
+        $.ajax({
+            method: "GET",
+            url: "/my/article/cates",
+            success: function(res) {
+
+                if (res.status !== 0) return layui.layer.msg(res.message)
+                let cateStr = template('cate-list', res)
+
+                $('[name=cate_id]').html(cateStr)
+                    // 通知layui重新渲染表单
+                layui.form.render()
+
+            }
+        });
+    }
+    // 筛选按钮添加提交事件
+
+    $('#but-form').submit(function(e) {
+        e.preventDefault()
+            // 获取对应的val
+        let cate_id = $('[name=cate_id]').val()
+        let state = $('[name=state]').val()
+            // 把拿到的val 赋值给q对象
+        q.cate_id = cate_id
+        q.state = state
+            // 根据q重新获取数据
+        initTable()
     })
-  }
 
-  // 通过代理的形式，为删除按钮绑定点击事件处理函数
-  $('tbody').on('click', '.btn-delete', function() {
-    // 获取删除按钮的个数
-    var len = $('.btn-delete').length
-    console.log(len)
-    // 获取到文章的 id
-    var id = $(this).attr('data-id')
-    // 询问用户是否要删除数据
-    layer.confirm('确认删除?', { icon: 3, title: '提示' }, function(index) {
-      $.ajax({
-        method: 'GET',
-        url: '/my/article/delete/' + id,
-        success: function(res) {
-          if (res.status !== 0) {
-            return layer.msg('删除文章失败！')
-          }
-          layer.msg('删除文章成功！')
-          // 当数据删除完成后，需要判断当前这一页中，是否还有剩余的数据
-          // 如果没有剩余的数据了,则让页码值 -1 之后,
-          // 再重新调用 initTable 方法
-          // 4
-          if (len === 1) {
-            // 如果 len 的值等于1，证明删除完毕之后，页面上就没有任何数据了
-            // 页码值最小必须是 1
-            q.pagenum = q.pagenum === 1 ? 1 : q.pagenum - 1
-          }
-          initTable()
+    // 渲染分页的方法
+    function renderPage(total) {
+        layui.laypage.render({
+            elem: 'test1',
+            //注意，这里的 test1 是 ID，不用加 # 号
+            count: total, //数据总数，从服务端得到
+            limit: q.pagesize, //每页显示几条数据
+            curr: q.pagenum, //默认被选中的页
+
+            layout: ['count', 'limit', 'prev', 'page', 'next', 'skip'],
+            limits: [2, 3, 5, 8, 10],
+            // 当分页被切换时触发，函数返回两个参数：obj（当前分页的所有选项值）、first（是否首次，一般用于初始加载的判断）
+            jump: function(obj, first) {
+                //obj包含了当前分页的所有参数，比如：
+                //console.log(obj.curr); 得到当前页，以便向服务端请求对应页的数据。
+                // 把最新的页码值给q
+                q.pagenum = obj.curr
+                    // console.log(obj.limit);
+                    //得到每页显示的条数
+                    // 把最新每页显示的条数给q
+                q.pagesize = obj.limit
+                    //首次不执行  解决死循环
+                if (!first) {
+                    initTable()
+                }
+            }
+        });
+    }
+    // 删除事件
+    // 获取每个按钮对应的ID
+
+    $('tbody').on('click', '.but-dele', function() {
+            // 获取删除按钮的个数
+            let len = $('.but-dele').length
+            let deleId = $(this).attr('data-id')
+            layui.layer.confirm('确定删除吗?', { icon: 3, title: '提示' }, function(index) {
+                $.ajax({
+                    method: "GET",
+                    url: "/my/article/delete/" + deleId,
+
+                    success: function(res) {
+                        if (res.status !== 0) return layui.layer.msg(res.message)
+
+                        layui.layer.msg('删除成功')
+                            // 当数据删除完成后 需要判断当前页是否还有数据  如果没让页码值-1
+                        if (len === 1) {
+                            q.pagenum = q.pagenum === 1 ? 1 : q.pagenum - 1
+
+                        }
+                        initTable()
+
+
+                    }
+                });
+                layui.layer.close(index)
+            });
+
+        })
+        //编辑事件
+    let indexEdnt = null
+    $('tbody').on('click', '.but-text', function() {
+        indexEdnt = layui.layer.open({
+            type: 1,
+            title: '修改',
+            area: ['100%', '100%'],
+            content: $("#text-form").html()
+
+        })
+        let id = $(this).attr('data-id')
+        $.ajax({
+            method: "GET",
+            url: "/my/article/" + id,
+            data: id,
+            success: function(res) {
+                if (res.status !== 0) {
+                    return layui.layer.msg(res.message)
+                }
+                layui.form.val('form-x', res.data)
+
+            }
+        });
+        initCate()
+            // 初始化富文本
+        initEditor()
+            // 初始化裁剪区域
+            // 1.1 获取裁剪区域的 DOM 元素
+        let $image = $('#image')
+            // 1.2 配置选项
+        const options = {
+            // 纵横比
+            aspectRatio: 1,
+            // 指定预览区域
+            preview: '.img-preview'
         }
-      })
 
-      layer.close(index)
+        // 1.3 创建裁剪区域
+        $image.cropper(options)
+            // 选择封面
+        $('#btnChooseImage').on('click', function() {
+                $('#coverFile').click()
+            })
+            // 给#coverFile 添加change 事件
+        $('#coverFile').on('change', function(e) {
+                let filelise = e.target.files
+                if (filelise.length === 0) {
+                    return layui.lauer.msg('请选择图片')
+                }
+                // 拿到用户选择的文件
+                let file = e.target.files[0]
+                    // 把文件转换为url 地址
+                let newImgURL = URL.createObjectURL(file)
+                $image
+                    .cropper('destroy') // 销毁旧的裁剪区域
+                    .attr('src', newImgURL) // 重新设置图片路径
+                    .cropper(options) // 重新初始化裁剪区域
+
+            })
+            // 确定修改按钮
+        $('#form-x').submit(function(e) {
+            e.preventDefault()
+                // 2. 基于 form 表单，快速创建一个 FormData 对象
+            let fd = new FormData($(this)[0])
+            fd.append('Id', id)
+                // fd.forEach(function(v, k) {
+                //     console.log(v, k);
+                // })
+            $image
+                .cropper('getCroppedCanvas', { // 创建一个 Canvas 画布
+                    width: 100,
+                    height: 100
+                })
+                .toBlob(function(blob) {
+                    // 将 Canvas 画布上的内容，转化为文件对象
+                    // 得到文件对象后，进行后续的操作
+                    // 5. 将文件对象，存储到 fd 中
+                    fd.append('cover_img', blob)
+                        // publishArticle(fd)
+                    $.ajax({
+                        method: 'POST',
+                        url: '/my/article/edit',
+                        data: fd,
+                        // 注意：如果向服务器提交的是 FormData 格式的数据，
+                        // 必须添加以下两个配置项
+                        contentType: false,
+                        processData: false,
+                        success: function(res) {
+                            if (res.status !== 0) {
+                                return layui.layer.msg(res.message)
+                            }
+                            layui.layer.msg('修改文章成功！')
+                                // 根据索引，关闭对应的弹出层
+                            layui.layer.close(indexEdnt)
+                                // 获取分类列表
+                            initTable()
+                                // 发布文章成功后，跳转到文章列表页面
+                            location.href = '/article/art_list.html'
+                        }
+                    })
+                })
+        })
+
     })
-  })
+
+
+
+
 })
